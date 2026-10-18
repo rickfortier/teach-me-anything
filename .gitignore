@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+*.tmp
+# Your API keys
+.env
+logs/
+# Generated content: each course is its own folder under courses/ (lessons, figures,
+# audio, videos lists, PDFs, build reports). Personal; never published.
+/courses/
+# Model eval runs and cached plans
+/evals/
+.pytest_cache/
+electron/node_modules/

@@ -1,0 +1,138 @@
+# Teach Me settings. API keys live in .env, never here.
+
+# Models for each task, tried in order: the first one that has a key and works is used.
+# Each one is provider/model, plus @effort if wanted:
+#   openrouter/openai/gpt-6-luna@low  ->  provider openrouter, model openai/gpt-6-luna, effort low
+# Providers: openrouter, openai, gemini, anthropic, ollama (free, on this computer).
+# A model whose provider has no key in .env is skipped, and the app tells you so
+# (AI setup in the app, or `python teachme.py check`).
+# Effort words: OpenAI/OpenRouter none | low | medium | high; Gemini minimal | low |
+# medium | high; Anthropic low ... max. Thinking is billed as output: lower is cheaper.
+tasks:
+  plan:
+    - openrouter/google/gemini-3.8-flash@low      # $0.83/$4.13 per million tokens
+    - openrouter/openai/gpt-6-luna@low            # $0.10/$0.50
+    - openrouter/z-ai/glm-5.3                     # $0.08/$4.80
+    # same task with a direct key, when there's no OpenRouter key:
+    - gemini/gemini-3.8-flash@low
+    - openai/gpt-6-luna@low
+    - anthropic/claude-sonnet-5@low
+  lesson:
+    - openrouter/openai/gpt-6-luna@low
+    - openrouter/qwen/qwen3.8-flash               # $0.15/$0.47
+    - openrouter/z-ai/glm-5.3
+    - openai/gpt-6-luna@low
+    - gemini/gemini-3.8-flash@low
+    - anthropic/claude-sonnet-5@low
+  quiz:
+    - openrouter/openai/gpt-6-luna@low
+    - openrouter/qwen/qwen3.8-flash
+    - openrouter/z-ai/glm-5.3
+    - openai/gpt-6-luna@low
+    - gemini/gemini-3.8-flash@low
+    - anthropic/claude-sonnet-5@low
+  placement:
+    - openrouter/openai/gpt-6-luna@low
+    - openrouter/qwen/qwen3.8-flash
+    - openrouter/z-ai/glm-5.3
+    - openai/gpt-6-luna@low
+    - gemini/gemini-3.8-flash@low
+    - anthropic/claude-sonnet-5@low
+  walkthrough:                                    # storyboards + SVG scenes
+    - openrouter/google/gemini-3.8-flash@low
+    - openrouter/minimax/minimax-m3               # $0.30/$1.20
+    - openrouter/openai/gpt-6-luna@low
+    - gemini/gemini-3.8-flash@low
+    - openai/gpt-6-luna@low
+    - anthropic/claude-sonnet-5@low
+  videos:                                         # picks videos by title when Gemini can't watch them
+    - openrouter/openai/gpt-6-luna@none
+    - openrouter/qwen/qwen3.8-flash
+    - openrouter/z-ai/glm-5.3
+    - openai/gpt-6-luna@low
+    - gemini/gemini-3.8-flash@low
+    - anthropic/claude-sonnet-5@low
+  category:                                       # files the course in the catalog tree
+    - openrouter/openai/gpt-5-nano@low            # $0.05/$0.40
+    - openrouter/openai/gpt-6-luna@none
+    - openrouter/qwen/qwen3.8-flash
+    - openai/gpt-6-luna@low
+    - gemini/gemini-3.8-flash@low
+    - anthropic/claude-sonnet-5@low
+  video_judge:                                    # watches the video: Gemini only, direct or via OpenRouter
+    - openrouter/google/gemini-3.5-flash-lite@minimal   # $0.30/$2.50; always sent to Google AI Studio
+    - gemini/gemini-3.5-flash-lite@minimal        # direct: also honours video_fps / video_resolution (fewer tokens)
+    - openrouter/google/gemini-3.8-flash@minimal  # $0.75/$3.75
+effort: low             # Claude's effort for an anthropic/... model without @effort
+
+max_days: 30            # cap on the number of days the planner may choose
+workers: 3              # days generated in parallel
+
+videos_per_day: 3
+min_video_seconds: 90   # drops Shorts
+max_video_minutes: 60
+
+# Where videos come from. Both use only official APIs (no transcript scraping):
+#   youtube - YouTube Data API search (needs YOUTUBE_API_KEY). search.list has its
+#             own quota since June 2026: 100 calls a day free.
+#   web     - Gemini (through OpenRouter) searches the web for YouTube links. No YouTube
+#             key needed; about $0.04 a course day for the search results.
+# Either way, free metadata (length, embeddable, captions) filters the results,
+# then Gemini watches the best `judge_candidates` and scores them against the
+# lesson, marking the most useful segment so the player opens there. With no
+# usable model under tasks.video_judge, videos are picked by title and description.
+video_source: youtube   # web: Gemini searches instead (no YouTube key needed, ~$0.01 a day)
+judge_candidates: 3     # videos Gemini watches per day (each ~60k tokens at full resolution)
+min_video_score: 7      # 0-10 match needed to keep a video
+video_fps: 0.5          # frames per second Gemini samples (default 1); direct gemini/ only
+video_resolution: low   # low | medium | high: tokens per frame; direct gemini/ only
+
+# youtube source only
+queries_per_day: 1
+search_results_per_query: 15
+
+# web source only
+web_search_models:      # models with web search, tried in this order
+  openrouter: google/gemini-3.8-flash     # with Exa results: about $0.04 per day
+  anthropic: claude-sonnet-5              # Anthropic's search tool reads whole pages: $0.20-0.45 per day
+web_search_engine: exa  # OpenRouter engine: exa (cheap result list) or native (reads pages, 10-20x cost)
+web_search_results: 10  # results Exa returns per day ($0.004 each)
+web_searches_per_day: 3 # Anthropic search tool only: searches allowed per day
+web_candidates: 8       # links to check per day
+
+# Narration for the animated walkthroughs, recorded once per course.
+#   kokoro - Kokoro-FastAPI on this machine: docker run -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+#            (or kokoro-fastapi-gpu). If it isn't running, the build skips narration and the app
+#            uses the system voice; "Retry failed parts" records it later.
+#   openai - any OpenAI-compatible speech endpoint, e.g. a hosted Kokoro:
+#            tts_url: https://api.deepinfra.com/v1/openai, tts_model: hexgrad/Kokoro-82M, TTS_API_KEY in .env
+#   off    - system voice only
+tts_engine: kokoro
+tts_url: http://localhost:8880
+tts_voice: af_heart
+tts_speed: 1.0
+
+# Build report: every course gets build_report.json (models per task, YouTube
+# videos used and checked, approximate cost, category). After a course's first
+# build it is emailed to REPORT_EMAIL from .env, if set, using the SMTP settings there.
+report_email_retries: false   # true: also email after each "Retry failed parts"
+
+# Source websites (the optional "Base it on my websites" field): pages read per course,
+# starting from the addresses given and following links on the same sites.
+source_pages: 25
+source_page_chars: 8000 # text kept per page
+source_chars: 60000     # source text sent with each lesson, quiz and walkthrough (~15k tokens)
+
+quiz_questions: 5
+quiz_pass: 4            # correct answers needed to auto-complete a day
+
+# Model eval (python eval_models.py): each candidate writes a lesson and quiz for
+# 50 topics, the grader checks them, and the cheapest model passing min_pass_rate wins.
+eval:
+  grader: openrouter/anthropic/claude-sonnet-5@medium
+  min_pass_rate: 0.9
+  candidates:
+    - openrouter/openai/gpt-6-luna@low
+    - openrouter/qwen/qwen3.8-flash
+    - openrouter/google/gemini-3.8-flash@low
+    - openrouter/z-ai/glm-5.3

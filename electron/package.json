@@ -1,0 +1,17 @@
+{
+  "name": "teachme",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "server": "electron . --server",
+    "test": "node --test jobs.test.js"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.17",
+    "marked": "^15.0.12"
+  }
+}
